@@ -115,6 +115,60 @@ class Context:
     def drop(self) -> None:
         self._included = set()
 
+    def list(self, relative: bool = True) -> str:
+        """List all Path objects in the context.
+
+        Args:
+            relative (bool): Whether show paths relative to the root or not.
+
+        Returns:
+            List[Path]: List of paths in the context.
+        """
+        return "\n".join(
+            [
+                str(
+                    p.absolute()
+                    if not relative
+                    else p.absolute().relative_to(self.root_path)
+                )
+                for p in sorted(self._included)
+            ]
+        )
+
+    def tree(self) -> str:
+        tree: Dict[str, Any] = {}
+        for path in [
+            path.absolute().relative_to(self.root_path) for path in self._included
+        ]:
+            self._add_path_to_tree(tree, path.parts)
+
+        if not tree:
+            return ""
+
+        return f".\n{self._build_tree_string(tree)}\n"
+
+    def _add_path_to_tree(self, tree: Dict[str, Any], parts: tuple[str, ...]) -> None:
+        if len(parts) == 1:
+            tree[parts[0]] = None
+        else:
+            if parts[0] not in tree:
+                tree[parts[0]] = {}
+            self._add_path_to_tree(tree[parts[0]], parts[1:])
+
+    def _build_tree_string(self, tree: Dict[str, Any], prefix: str = "") -> str:
+        result = []
+        keys = sorted(tree.keys())
+
+        for i, key in enumerate(keys):
+            subtree = tree[key]
+            connector = "└── " if i == len(keys) - 1 else "├── "
+            result.append(f"{prefix}{connector}{key}")
+            if subtree is not None:
+                extension = "    " if i == len(keys) - 1 else "│   "
+                result.append(self._build_tree_string(subtree, prefix + extension))
+
+        return "\n".join(result)
+
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__!s}"

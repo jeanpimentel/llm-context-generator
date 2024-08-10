@@ -285,3 +285,75 @@ sql/mysql
         context.drop()
 
         self.assertEqual(0, len(context._included))
+
+    def test_tree(self):
+        context = Context(root_path=FIXTURES_DIR)
+        context.add(FIXTURES_DIR)
+
+        expected = """.
+├── .hidden_dir
+│   └── .hidden_file
+├── about.txt
+├── b
+│   ├── hello.bash
+│   └── hello.bat
+├── hello.c
+├── hello.cpp
+├── hello.go
+├── hello.html
+├── hello.kt
+├── j
+│   ├── hello.java
+│   ├── hello.js
+│   └── hello.json
+├── p
+│   ├── hello.php
+│   └── hello.pl
+└── sql
+    ├── mysql
+    │   └── hello.sql
+    └── postgresql
+        └── hello.sql
+"""
+
+        self.assertEqual(expected, context.tree())
+
+        context.remove(FIXTURES_DIR / "j")
+        context.remove(FIXTURES_DIR / "p")
+        context.remove(FIXTURES_DIR / "sql" / "mysql")
+
+        expected2 = """.
+├── .hidden_dir
+│   └── .hidden_file
+├── about.txt
+├── b
+│   ├── hello.bash
+│   └── hello.bat
+├── hello.c
+├── hello.cpp
+├── hello.go
+├── hello.html
+├── hello.kt
+└── sql
+    └── postgresql
+        └── hello.sql
+"""
+
+        self.assertEqual(expected2, context.tree())
+
+    def test_tree_without_files(self):
+        context = Context(root_path=FIXTURES_DIR)
+        self.assertEqual("", context.tree())
+
+    def test_list(self):
+        php = FIXTURES_DIR / "p" / "hello.php"
+        java = FIXTURES_DIR / "j" / "hello.java"
+
+        context = Context(root_path=TESTS_DIR)
+        context.add(php, java)
+
+        self.assertEqual("fixtures/j/hello.java\nfixtures/p/hello.php", context.list())
+
+        self.assertEqual(
+            f"{java.absolute()}\n{php.absolute()}", context.list(relative=False)
+        )
