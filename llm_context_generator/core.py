@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import os
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import pathspec
 
@@ -90,6 +90,30 @@ class Context:
                         if resolved_value not in self._included:
                             self._included.add(resolved_value)
                             logger.debug(f"File added: {resolved_value}")
+
+    def remove(self, *values: Path) -> None:
+        """Remove a Path object from the context.
+
+        Args:
+            values (Path, ...): Paths to remove from the context.
+        """
+        for value in values:
+            resolved_value = value.resolve()
+
+            if resolved_value.is_file():
+                if resolved_value in self._included:
+                    self._included.remove(resolved_value)
+                    logger.debug(f"File removed: {resolved_value}")
+            elif resolved_value.is_dir():
+                self._included = {
+                    file
+                    for file in self._included
+                    if not file.is_relative_to(resolved_value)
+                }
+                logger.debug(f"Directory removed and its files: {resolved_value}")
+
+    def drop(self) -> None:
+        self._included = set()
 
     def __repr__(self) -> str:
         return (

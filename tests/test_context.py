@@ -248,3 +248,40 @@ sql/mysql
         self.assertIn(j_dir / "hello.java", context._included)
         self.assertIn(j_dir / "hello.js", context._included)
         self.assertIn(j_dir / "hello.json", context._included)
+
+    def test_remove_file(self):
+        c = FIXTURES_DIR / "hello.c"
+        bash = FIXTURES_DIR / "b" / "hello.bash"
+
+        context = Context(root_path=TESTS_DIR)
+        context.add(c, bash)
+
+        self.assertIn(c, context._included)
+        self.assertIn(bash, context._included)
+
+        context.remove(c)
+        self.assertNotIn(c, context._included)
+
+    def test_remove_directory(self):
+        context = Context(root_path=TESTS_DIR)
+        context.add(FIXTURES_DIR)
+
+        self.assertIn(FIXTURES_DIR / "j" / "hello.java", context._included)
+        self.assertIn(FIXTURES_DIR / "j" / "hello.js", context._included)
+        self.assertIn(FIXTURES_DIR / "j" / "hello.json", context._included)
+
+        context.remove(FIXTURES_DIR / "j")
+
+        self.assertNotIn(FIXTURES_DIR / "j" / "hello.java", context._included)
+        self.assertNotIn(FIXTURES_DIR / "j" / "hello.js", context._included)
+        self.assertNotIn(FIXTURES_DIR / "j" / "hello.json", context._included)
+
+    def test_drop(self):
+        context = Context(root_path=TESTS_DIR)
+        context.add(FIXTURES_DIR)
+
+        self.assertNotEqual(0, len(context._included))
+
+        context.drop()
+
+        self.assertEqual(0, len(context._included))
