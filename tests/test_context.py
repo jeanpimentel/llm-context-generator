@@ -357,3 +357,60 @@ sql/mysql
         self.assertEqual(
             f"{java.absolute()}\n{php.absolute()}", context.list(relative=False)
         )
+
+    def test_generate(self):
+        context = Context(root_path=TESTS_DIR)
+        context.add(FIXTURES_DIR / "j")
+        context.add(FIXTURES_DIR / "p")
+
+        expected = """## Context - Relevant files
+
+````
+.
+└── fixtures
+    ├── j
+    │   ├── hello.java
+    │   ├── hello.js
+    │   └── hello.json
+    └── p
+        ├── hello.php
+        └── hello.pl
+````
+
+### `fixtures/j/hello.java`
+````java
+public class Java {
+    public static void main(String[] args) {
+        System.out.println("Hello World");
+    }
+}
+````
+
+### `fixtures/j/hello.js`
+````js
+console.log("Hello World");
+````
+
+### `fixtures/j/hello.json`
+````json
+{ "hello": "world" }
+````
+
+### `fixtures/p/hello.php`
+````php
+<?php
+
+echo 'Hello World';
+````
+
+### `fixtures/p/hello.pl`
+````pl
+#!/usr/bin/perl
+print "Hello World";
+````
+"""
+        self.assertEqual(expected, context.generate())
+
+    def test_generate_without_files(self):
+        context = Context(root_path=TESTS_DIR)
+        self.assertEqual("", context.generate())

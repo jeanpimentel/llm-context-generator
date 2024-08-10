@@ -169,6 +169,34 @@ class Context:
 
         return "\n".join(result)
 
+    def generate(self) -> str:
+        if not self._included:
+            logger.debug("No files in the context")
+            return ""
+
+        def wrap_code(file: Path) -> str:
+            return "\n".join(
+                [
+                    f"### `{file.absolute().relative_to(self.root_path)}`",
+                    f"````{file.suffix[1:] if file.suffix else ''}",
+                    f"{file.read_text()}",
+                    "````\n",
+                ]
+            )
+
+        content = [
+            "## Context - Relevant files\n",
+            f"````\n{self.tree()}````\n" "",
+        ]
+
+        for path in sorted(self._included):
+            try:
+                content.append(wrap_code(path))
+            except UnicodeDecodeError as e:
+                logger.error(f"Could not read: {path}: {e}")
+
+        return "\n".join(content)
+
     def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__!s}"
