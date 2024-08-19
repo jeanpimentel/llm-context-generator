@@ -23,6 +23,10 @@ classifiers = [
   "Topic :: Utilities",
 ]
 
+[tool.poetry.scripts]
+llm-context = "llm_context_generator.cli:cli"
+ctx = "llm_context_generator.cli:cli"
+
 [tool.poetry.dependencies]
 python = ">=3.9,<3.13"
 pathspec = "0.12.1"
