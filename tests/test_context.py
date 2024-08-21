@@ -1,3 +1,4 @@
+import json
 import logging
 import unittest
 from pathlib import Path
@@ -414,3 +415,114 @@ print "Hello World";
     def test_generate_without_files(self):
         context = Context(root_path=TESTS_DIR)
         self.assertEqual("", context.generate())
+
+    def test_equals(self):
+        c1 = Context(root_path=TESTS_DIR, ignore=["*.json"])
+        c1.add(FIXTURES_DIR)
+
+        c2 = Context(root_path=FIXTURES_DIR.parent, ignore="*.json")
+        c2.add(FIXTURES_DIR)
+
+        self.assertEqual(c1, c2)
+
+
+class ToJsonFromJson(unittest.TestCase):
+    def test_empty(self):
+        context = Context(root_path=TESTS_DIR)
+
+        expected = {
+            "root": str(TESTS_DIR),
+            "ignore": [],
+            "files": [],
+        }
+
+        ctx_as_json = context.to_json()
+        self.assertEqual(expected, json.loads(ctx_as_json))
+
+        context_2 = Context.from_json(ctx_as_json)
+        self.assertEqual(context, context_2)
+
+    def test_with_files(self):
+        context = Context(root_path=TESTS_DIR)
+        context.add(FIXTURES_DIR / "p")
+        context.add(FIXTURES_DIR / "j")
+
+        expected = {
+            "root": str(TESTS_DIR),
+            "ignore": [],
+            "files": [
+                str(FIXTURES_DIR / "j" / "hello.java"),
+                str(FIXTURES_DIR / "j" / "hello.js"),
+                str(FIXTURES_DIR / "j" / "hello.json"),
+                str(FIXTURES_DIR / "p" / "hello.php"),
+                str(FIXTURES_DIR / "p" / "hello.pl"),
+            ],
+        }
+
+        ctx_as_json = context.to_json()
+        self.assertEqual(expected, json.loads(ctx_as_json))
+
+        context_2 = Context.from_json(ctx_as_json)
+        self.assertEqual(context, context_2)
+
+    def test_with_ignore(self):
+        with NamedTemporaryFile(delete=True, suffix=".gitignore") as temp_file:
+            temp_file.write(b"*.java")
+            temp_file.seek(0)
+
+            context = Context(root_path=TESTS_DIR, ignore=Path(temp_file.name))
+            context.add(FIXTURES_DIR / "p")
+            context.add(FIXTURES_DIR / "j")
+
+            expected = {
+                "root": str(TESTS_DIR),
+                "ignore": [
+                    f"path::{temp_file.name}",
+                ],
+                "files": [
+                    str(FIXTURES_DIR / "j" / "hello.js"),
+                    str(FIXTURES_DIR / "j" / "hello.json"),
+                    str(FIXTURES_DIR / "p" / "hello.php"),
+                    str(FIXTURES_DIR / "p" / "hello.pl"),
+                ],
+            }
+
+            ctx_as_json = context.to_json()
+            self.assertEqual(expected, json.loads(ctx_as_json))
+
+            context_2 = Context.from_json(ctx_as_json)
+            self.assertEqual(context, context_2)
+
+    def test_with_ignore_list(self):
+        with NamedTemporaryFile(delete=True, suffix=".gitignore") as temp_file:
+            temp_file.write(b"*.java")
+            temp_file.seek(0)
+
+            context = Context(
+                root_path=TESTS_DIR,
+                ignore=[
+                    Path(temp_file.name),
+                    "*.json",
+                ],
+            )
+            context.add(FIXTURES_DIR / "p")
+            context.add(FIXTURES_DIR / "j")
+
+            expected = {
+                "root": str(TESTS_DIR),
+                "ignore": [
+                    f"path::{temp_file.name}",
+                    "str::*.json",
+                ],
+                "files": [
+                    str(FIXTURES_DIR / "j" / "hello.js"),
+                    str(FIXTURES_DIR / "p" / "hello.php"),
+                    str(FIXTURES_DIR / "p" / "hello.pl"),
+                ],
+            }
+
+            ctx_as_json = context.to_json()
+            self.assertEqual(expected, json.loads(ctx_as_json))
+
+            context_2 = Context.from_json(ctx_as_json)
+            self.assertEqual(context, context_2)

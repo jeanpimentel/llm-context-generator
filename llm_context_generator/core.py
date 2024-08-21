@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 from pathlib import Path
@@ -202,3 +203,43 @@ class Context:
             f"{self.__class__.__name__!s}"
             f"(root_path={self.root_path!r}, ignore={self.ignore!r})"
         )
+
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, Context) and self.to_json() == other.to_json()
+
+    def to_json(self) -> str:
+        if not self.ignore:
+            ignore = []
+        elif isinstance(self.ignore, List):
+            ignore = self.ignore
+        else:
+            ignore = [self.ignore]
+
+        return json.dumps(
+            {
+                "root": str(self.root_path),
+                "ignore": [
+                    f"{'str' if isinstance(i, str) else 'path'}::{i}" for i in ignore
+                ],
+                "files": list(map(str, sorted(self._included))),
+            },
+            indent=4,
+        )
+
+    @classmethod
+    def from_json(cls, data: str) -> Context:
+        decoded_data: Dict[str, Any] = json.loads(data)
+
+        ignore: List[Union[str, Path]] = []
+        for i in decoded_data["ignore"]:
+            type_, content = i.split("::")
+            if type_ == "path":
+                ignore.append(Path(content))
+            else:
+                ignore.append(content)
+
+        ctx = Context(root_path=Path(decoded_data["root"]), ignore=ignore)
+        if decoded_data["files"]:
+            ctx.add(*map(Path, decoded_data["files"]))
+
+        return ctx
