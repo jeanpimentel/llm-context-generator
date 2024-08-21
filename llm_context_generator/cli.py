@@ -4,7 +4,15 @@ from typing import List, Tuple
 
 import click
 
-from llm_context_generator import __version__
+from llm_context_generator import Context, __version__
+
+
+def get_ctx() -> Context:
+    return Context(Path.cwd())
+
+
+def save_ctx(context: Context) -> None:
+    pass
 
 
 class OrderCommands(click.Group):
@@ -63,8 +71,9 @@ def add(
     <FILES>...
         Files that should be added to the context for the LLM. Fileglobs (e.g. *.c) can be given to add all matching files. Also a leading directory name (e.g. dir to add dir/file1 and dir/file2).
     """
-    click.echo("Add:")
-    click.echo(src)
+    ctx = get_ctx()
+    ctx.add(*src)
+    save_ctx(ctx)
 
 
 @cli.command(short_help="Remove files from the context. Run remove --help to see more.")
@@ -93,32 +102,37 @@ def remove(
     <FILES>...
         Files that should be removed from the context for the LLM. Fileglobs (e.g. *.c) can be given to remove all matching files. Also a leading directory name (e.g. dir to add dir/file1 and dir/file2).
     """
-    click.echo("Remove:")
-    click.echo(src)
+    ctx = get_ctx()
+    ctx.remove(*src)
+    save_ctx(ctx)
 
 
 @cli.command()
 def reset() -> None:
     """Reset the context removing all files."""
-    click.echo("reset.")
+    ctx = get_ctx()
+    ctx.drop()
+    save_ctx(ctx)
 
 
 @cli.command(name="list")
 def list_() -> None:
     """List what is included in the context."""
-    click.echo("list!")
+    click.echo(get_ctx().list())
 
 
 @cli.command()
 def tree() -> None:
     """List what is included in the context as a tree."""
-    click.echo("treeeeee")
+    click.echo(get_ctx().tree())
 
 
 @cli.command()
 def generate() -> None:
     """Generate the context output."""
-    click.echo("generate...")
+    ctx = get_ctx()
+    save_ctx(ctx)
+    click.echo(ctx.generate())
 
 
 if __name__ == "__main__":
