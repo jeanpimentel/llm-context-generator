@@ -1,18 +1,96 @@
 import pathlib
+import shutil
+import sys
+from functools import lru_cache
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import click
 
 from llm_context_generator import Context, __version__
 
+_CTX_DIR_NAME = ".ctx"
+_CTX_METADATA = "ctx.json"
+_CTX_OUTPUT = "ctx.md"
+
+
+def get_ctx_dir() -> Path:
+    root = _find_root(start_path=Path.cwd())
+    if not root:
+        click.secho(
+            "Context not found. Please initialize with the init command.",
+            fg="red",
+            bold=True,
+        )
+        sys.exit(-1)
+
+    return root / _CTX_DIR_NAME
+
+
+@lru_cache
+def _find_root(start_path: Path) -> Optional[Path]:
+    current_path = Path(start_path).resolve()
+    while current_path:
+        target_folder = current_path / _CTX_DIR_NAME
+        if target_folder.exists() and target_folder.is_dir():
+            return target_folder.parent.absolute()
+
+        if current_path == current_path.parent or current_path.parent == Path.home():
+            break
+
+        current_path = current_path.parent
+
+    return None
+
 
 def get_ctx() -> Context:
-    return Context(Path.cwd())
+    ctx_data = get_ctx_dir() / _CTX_METADATA
+    if not ctx_data.exists():
+        click.secho(
+            "Context not found. Please initialize with the init command.",
+            fg="red",
+            bold=True,
+        )
+        sys.exit(-1)
+
+    return Context.from_json(ctx_data.read_text())
 
 
 def save_ctx(context: Context) -> None:
-    pass
+    ctx_json = get_ctx_dir() / _CTX_METADATA
+    ctx_json.write_text(context.to_json())
+
+    ctx_md = get_ctx_dir() / _CTX_OUTPUT
+    ctx_md.write_text(context.generate())
+
+
+def init_ctx(root: Path) -> None:
+    ctx_dir = root / _CTX_DIR_NAME
+    if ctx_dir.exists():
+        click.secho(
+            f"Directory already exists: {_CTX_DIR_NAME}. If needed, run destroy command first.",
+            fg="yellow",
+        )
+        return
+    else:
+        ctx_dir.mkdir(parents=True)
+
+    ctx = Context(
+        root_path=root,
+        ignore=[
+            Path.home() / ".gitignore",  # Try global gitignore
+            root / ".gitignore",  # Try local gitignore
+            ".git",
+            ".ctx",
+        ],
+    )
+    save_ctx(ctx)
+
+    click.secho("Context initialized.", fg="green", bold=True)
+
+
+def destroy_ctx() -> None:
+    shutil.rmtree(get_ctx_dir())
 
 
 class OrderCommands(click.Group):
@@ -33,13 +111,13 @@ def cli() -> None:
 @cli.command()
 def init() -> None:
     """Initialize a context."""
-    click.echo("init!")
+    init_ctx(root=Path.cwd())
 
 
 @cli.command()
 def destroy() -> None:
     """Remove the context."""
-    click.echo("destroy!")
+    destroy_ctx()
 
 
 @cli.command(
@@ -76,7 +154,10 @@ def add(
     save_ctx(ctx)
 
 
-@cli.command(short_help="Remove files from the context. Run remove --help to see more.")
+@cli.command(
+    short_help="Remove files from the context. Run remove --help to see more.",
+    no_args_is_help=True,
+)
 @click.argument(
     "src",
     nargs=-1,

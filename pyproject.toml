@@ -63,6 +63,9 @@ src_paths = [
 max-complexity = 15
 max-line-length = 88
 statistics = true
+ignore = [
+  "E501", # line too long / black already solves what is possible
+]
 per-file-ignores = [
   "*/__init__.py: F401"
 ]
@@ -70,3 +73,10 @@ per-file-ignores = [
 [tool.mypy]
 python_version = "3.9"
 strict = true
+
+[tool.coverage.report]
+exclude_also = [
+  "def __repr__",
+  "if __name__ == .__main__.:",
+  "pass",
+]
