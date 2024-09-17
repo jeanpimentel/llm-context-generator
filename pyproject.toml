@@ -4,12 +4,12 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "llm-context-generator"
-version = "0.1.0"
+version = "1.0.0"
 description = "LLM context generator"
 authors = ["Jean Pimentel <contato@jeanpimentel.com.br>"]
 license = "MIT"
 readme = "README.md"
-repository = "https://github.com/jeanpimentel/llm-context"
+repository = "https://github.com/jeanpimentel/llm-context-generator"
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Console",
