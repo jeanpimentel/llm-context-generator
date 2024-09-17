@@ -9,6 +9,7 @@ clean:
 	@find . -name '.coverage' -delete
 	@rm -rf "htmlcov" || true
 	@rm -rf "dist" || true
+	@rm -rf ".tox" || true
 
 build: clean
 	poetry build

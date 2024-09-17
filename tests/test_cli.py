@@ -1,10 +1,10 @@
 import json
 import os
 import shutil
+import typing as t
 import unittest
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Tuple
 
 from click.testing import CliRunner
 
@@ -26,7 +26,7 @@ FIXTURES_DIR = TESTS_DIR / "fixtures"
 
 
 @contextmanager
-def initiated_context() -> Tuple[Context, Path]:
+def initiated_context() -> t.Tuple[Context, Path]:
     runner = CliRunner()
     with runner.isolated_filesystem():
         init_result = runner.invoke(init)

@@ -1,9 +1,9 @@
 import pathlib
 import shutil
 import sys
+import typing as t
 from functools import lru_cache
 from pathlib import Path
-from typing import List, Optional, Tuple
 
 import click
 
@@ -28,7 +28,7 @@ def get_ctx_dir() -> Path:
 
 
 @lru_cache
-def _find_root(start_path: Path) -> Optional[Path]:
+def _find_root(start_path: Path) -> t.Optional[Path]:
     current_path = Path(start_path).resolve()
     while current_path:
         target_folder = current_path / _CTX_DIR_NAME
@@ -94,7 +94,7 @@ def destroy_ctx() -> None:
 
 
 class OrderCommands(click.Group):
-    def list_commands(self, ctx: click.Context) -> List[str]:
+    def list_commands(self, ctx: click.Context) -> t.List[str]:
         return list(self.commands)
 
 
@@ -140,7 +140,7 @@ def destroy() -> None:
 )
 @click.option("--verbose", "-v", is_flag=True, help="Enables verbose mode.")
 def add(
-    src: Tuple[Path, ...],
+    src: t.Tuple[Path, ...],
     verbose: bool = False,
 ) -> None:
     """Add files to the context.
@@ -174,7 +174,7 @@ def add(
 )
 @click.option("--verbose", "-v", is_flag=True, help="Enables verbose mode.")
 def remove(
-    src: Tuple[Path, ...],
+    src: t.Tuple[Path, ...],
     verbose: bool = False,
 ) -> None:
     """Remove files from the context.

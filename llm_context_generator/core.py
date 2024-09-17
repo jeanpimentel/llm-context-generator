@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 import logging
 import os
+import typing as t
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
 
 import pathspec
 
@@ -16,7 +16,7 @@ class Context:
     def __init__(
         self,
         root_path: Path,
-        ignore: Optional[Union[str, Path, List[Union[str, Path]]]] = None,
+        ignore: t.Optional[str | Path | t.List[str | Path]] = None,
     ):
         self.root_path = root_path.resolve()
         self.ignore = ignore
@@ -26,12 +26,12 @@ class Context:
 
     @staticmethod
     def _load_ignore_patterns(
-        ignore: Union[str, Path, List[Union[str, Path]]]
+        ignore: str | Path | t.List[str | Path],
     ) -> pathspec.PathSpec:
         """Load ignore patterns."""
         lines = []
 
-        if not isinstance(ignore, List):
+        if not isinstance(ignore, list):
             ignore = [ignore]
 
         for i in ignore:
@@ -117,14 +117,7 @@ class Context:
         self._included = set()
 
     def list(self, relative: bool = True) -> str:
-        """List all Path objects in the context.
-
-        Args:
-            relative (bool): Whether show paths relative to the root or not.
-
-        Returns:
-            List[Path]: List of paths in the context.
-        """
+        """List all Path objects in the context."""
         return "\n".join(
             [
                 str(
@@ -137,7 +130,7 @@ class Context:
         )
 
     def tree(self) -> str:
-        tree: Dict[str, Any] = {}
+        tree: t.Dict[str, t.Any] = {}
         for path in [
             path.absolute().relative_to(self.root_path) for path in self._included
         ]:
@@ -148,7 +141,11 @@ class Context:
 
         return f".\n{self._build_tree_string(tree)}\n"
 
-    def _add_path_to_tree(self, tree: Dict[str, Any], parts: tuple[str, ...]) -> None:
+    def _add_path_to_tree(
+        self,
+        tree: t.Dict[str, t.Any],
+        parts: t.Tuple[str, ...],
+    ) -> None:
         if len(parts) == 1:
             tree[parts[0]] = None
         else:
@@ -156,7 +153,11 @@ class Context:
                 tree[parts[0]] = {}
             self._add_path_to_tree(tree[parts[0]], parts[1:])
 
-    def _build_tree_string(self, tree: Dict[str, Any], prefix: str = "") -> str:
+    def _build_tree_string(
+        self,
+        tree: t.Dict[str, t.Any],
+        prefix: str = "",
+    ) -> str:
         result = []
         keys = sorted(tree.keys())
 
@@ -204,13 +205,13 @@ class Context:
             f"(root_path={self.root_path!r}, ignore={self.ignore!r})"
         )
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: t.Any) -> bool:
         return isinstance(other, Context) and self.to_json() == other.to_json()
 
     def to_json(self) -> str:
         if not self.ignore:
             ignore = []
-        elif isinstance(self.ignore, List):
+        elif isinstance(self.ignore, list):
             ignore = self.ignore
         else:
             ignore = [self.ignore]
@@ -228,9 +229,9 @@ class Context:
 
     @classmethod
     def from_json(cls, data: str) -> Context:
-        decoded_data: Dict[str, Any] = json.loads(data)
+        decoded_data: t.Dict[str, t.Any] = json.loads(data)
 
-        ignore: List[Union[str, Path]] = []
+        ignore: t.List[str | Path] = []
         for i in decoded_data["ignore"]:
             type_, content = i.split("::")
             if type_ == "path":
