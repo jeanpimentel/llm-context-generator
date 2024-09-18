@@ -1,0 +1,53 @@
+name: Test
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+
+    defaults:
+      run:
+        shell: bash
+        
+    steps:
+      #----------------------------------------------
+      #       check-out repo and set-up python      #
+      #----------------------------------------------
+      - uses: actions/checkout@v4
+    
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      #----------------------------------------------
+      #       install poetry + dependencies         #
+      #----------------------------------------------
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+
+      - name: Install dependencies
+        run: poetry install
+
+      #----------------------------------------------
+      #       run tests                             #
+      #----------------------------------------------
+      - name: Run tests
+        run: |
+          make test
+          
+      #----------------------------------------------
+      #       run lint + typecheck                  #
+      #----------------------------------------------
+      - name: Run lint and typecheck
+        run: |
+          make lint typecheck
